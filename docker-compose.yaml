@@ -1,0 +1,66 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+services:
+  kraend-api-gateway:
+    container_name: kraend-api-gateway
+    build:
+      dockerfile: Dockerfile-krakend
+    ports:
+      - 8080:8080
+      - 9090:9090
+    networks:
+      - backend
+  golang-receiver:
+    container_name: golang-receiver
+    build:
+      context: .
+      target: final
+    ports:
+      - 3000:3000
+    depends_on: [database]
+    networks:
+      - backend
+  database:
+    container_name: database
+    image: postgres:12.8
+    restart: always
+    environment:
+      - POSTGRES_USER=pg
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=crud
+    ports:
+      - 5432:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      - backend
+  auth:
+    image: quay.io/keycloak/keycloak:23.0.3
+    ports:
+      - "8000:8080"
+    environment:
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: admin
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://database/crud
+        KC_DB_USERNAME: pg
+        KC_DB_PASSWORD: pass
+    depends_on:
+      - database
+    command:
+      - start-dev
+    volumes:
+      - ./auth/import:/opt/keycloak/data/import
+    networks:
+      - backend
+volumes:
+  db:
+networks:
+  backend:
