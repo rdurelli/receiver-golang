@@ -8,6 +8,67 @@
 # database or a cache. For examples, see the Awesome Compose repository:
 # https://github.com/docker/awesome-compose
 services:
+  terraform:
+    build:
+      context: terraform
+    networks:
+      - backend
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - S3_HOSTNAME=localstack
+  localstack:
+    # container_name: "${LOCALSTACK_DOCKER_NAME:-localstack-main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566" # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559" # external services port range
+    environment:
+      # LocalStack configuration: https://docs.localstack.cloud/references/configuration/
+      - DEBUG=${DEBUG:-0}
+    volumes:
+      # - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - backend
+  loki:
+    image: grafana/loki:2.9.4
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - backend
+  promtail:
+    image: grafana/promtail:2.9.4
+    volumes:
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - backend
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+    networks:
+      - backend
+    ports:
+      - 9091:9090
+  grafana:
+    depends_on:
+      - prometheus
+    image: grafana/grafana:10.1.9
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: test
+      GF_PATHS_PROVISIONING: '/app.cfg/provisioning'
+    volumes:
+      - ./config/grafana:/app.cfg
+      - ./config/grafana-data:/var/lib/grafana
+      - ./config/grafana-config:/etc/grafana
+      - ./config/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - backend
   kraend-api-gateway:
     container_name: kraend-api-gateway
     build:
@@ -22,6 +83,14 @@ services:
     build:
       context: .
       target: final
+    environment:
+      - AWS_ACCESS_KEY_ID=foo
+      - AWS_SECRET_ACCESS_KEY=bar
+      - AWS_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - S3_FORCE_PATH_STYLE=true
+      - AWS_BUCKET=bucket1
+      - AWS_SQS_URL=https://localhost.localstack.cloud:4566/000000000000/queue1
     ports:
       - 3000:3000
     depends_on: [database]
@@ -64,3 +133,4 @@ volumes:
   db:
 networks:
   backend:
+  localstack:

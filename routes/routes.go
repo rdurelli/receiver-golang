@@ -72,8 +72,10 @@ func validateToken(token string, keycloakClient *gocloak.GoCloak) (bool, error) 
 }
 
 func inject(handler handlers.Handler) controller.ReceiverController {
-	reciverController := controller.New(services.New(repositories.New(handler)))
-	return reciverController
+	receiverController := controller.New(services.New(repositories.New(handler)), services.AwsService{
+		Session: services.NewAwsService().Session,
+	})
+	return receiverController
 }
 
 func injectLogin(keycloakClient *gocloak.GoCloak, ctx context.Context) controller.LoginController {

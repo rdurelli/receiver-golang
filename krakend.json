@@ -82,7 +82,8 @@
               "max_rate": 50,
               "capacity": 50,
               "every": "1s"
-            }
+            },
+            "qos/http-cache": {}
           },
           "host": [
             "http://golang-receiver:3000"

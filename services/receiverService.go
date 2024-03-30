@@ -15,6 +15,7 @@ func New(receiverRepository repositories.ReceiverRepository) ReceiverService {
 
 func (receiverService ReceiverService) Save(file models.FileToConvert) (int, bool) {
 	result, err := receiverService.ReceiverRepository.Save(file)
+
 	if err != nil {
 		return 0, true
 	}
