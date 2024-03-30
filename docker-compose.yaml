@@ -84,6 +84,15 @@ services:
       context: .
       target: final
     environment:
+      - KEYCLOAK_REALM=example-realm
+      - KEYCLOAK_CLIENT_ID=test-client
+      - KEYCLOAK_CLIENT_SECRET=AtU3FL4NDhfqiptgCZbwl9TkbK2s955S
+      - SERVER_PORT=3000
+      - DB_USER=pg
+      - DB_PASSWORD=pass
+      - DB_NAME=crud
+      - DB_HOST=database
+      - DB_PORT=5432
       - AWS_ACCESS_KEY_ID=foo
       - AWS_SECRET_ACCESS_KEY=bar
       - AWS_REGION=us-east-1

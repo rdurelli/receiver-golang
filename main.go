@@ -7,13 +7,20 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"os"
 	"receiver/handlers"
 	"receiver/models"
 	"receiver/routes"
 )
 
 func Init() *gorm.DB {
-	dbURL := "postgres://pg:pass@database:5432/crud"
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPass := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	//create the url connection
+	dbURL := "postgres://" + dbUser + ":" + dbPass + "@" + dbHost + ":" + dbPort + "/" + dbName
 
 	db, err := gorm.Open(postgres.Open(dbURL), &gorm.Config{})
 
@@ -41,7 +48,9 @@ func main() {
 	app.Use(logger.New())
 	routes.SetupRoutes(app, h, ctx)
 
-	err := app.Listen(":3000")
+	serverPort := os.Getenv("SERVER_PORT")
+
+	err := app.Listen(":" + serverPort)
 	if err != nil {
 		return
 	}

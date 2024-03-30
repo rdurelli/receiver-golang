@@ -4,12 +4,13 @@ import (
 	"context"
 	"github.com/Nerzal/gocloak/v13"
 	"github.com/gofiber/fiber/v2/log"
+	"os"
 )
 
 var (
-	keycloakRealm     = "example-realm"
-	keycloakClientID  = "test-client"
-	keycloakClientSec = "AtU3FL4NDhfqiptgCZbwl9TkbK2s955S"
+	keycloakRealm     = os.Getenv("KEYCLOAK_REALM")
+	keycloakClientID  = os.Getenv("KEYCLOAK_CLIENT_ID")
+	keycloakClientSec = os.Getenv("KEYCLOAK_CLIENT_SECRET")
 )
 
 type LoginService struct {
