@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"log/slog"
 	"mime/multipart"
 	"os"
 	"receiver/models"
@@ -21,10 +22,11 @@ const (
 type ReceiverController struct {
 	ReceiverService services.ReceiverService
 	AwsService      services.AwsService
+	Logger          *slog.Logger
 }
 
-func New(receiverService services.ReceiverService, awsService services.AwsService) ReceiverController {
-	return ReceiverController{ReceiverService: receiverService, AwsService: awsService}
+func New(receiverService services.ReceiverService, awsService services.AwsService, logger *slog.Logger) ReceiverController {
+	return ReceiverController{ReceiverService: receiverService, AwsService: awsService, Logger: logger}
 }
 
 func (receiver ReceiverController) ReceiverMp4Controller(c *fiber.Ctx) error {
@@ -48,11 +50,13 @@ func (receiver ReceiverController) ReceiverMp4Controller(c *fiber.Ctx) error {
 
 	err = receiver.sendToQueue(key+".mp4", zapNumber, discordWebHook, bucketName)
 	if err != nil {
+		receiver.Logger.Error("Error while sending to queue")
 		return c.SendString("Error while sending to queue")
 	}
 
 	fileToConvert, id, error := receiver.saveToDataBase(key, zapNumber, discordWebHook)
 	if error == true {
+		receiver.Logger.Error("Error while inserting file")
 		return c.SendString("Error while inserting file")
 	}
 
@@ -72,9 +76,11 @@ func (receiver ReceiverController) sendToQueue(key string, zapNumber string, dis
 	jsonData, err := json.Marshal(payload)
 	err = receiver.AwsService.SendToQueue(string(jsonData))
 	if err != nil {
+		receiver.Logger.Error("Error while sending to queue")
 		fmt.Println("Error while sending to queue")
 		return err
 	}
+	receiver.Logger.Info("Sent to queue")
 	return nil
 }
 
@@ -96,13 +102,15 @@ func (receiver ReceiverController) sendToBucket(c *fiber.Ctx, err error, file *m
 	// Read the file contents into the byte slice
 	_, err = buffer.Read(data)
 	if err != nil {
-		fmt.Println("Error reading file:", err)
+		receiver.Logger.Error("Error reading file:", err)
 	}
 
 	key, err := receiver.AwsService.UploadToS3(bucketName, data)
 	if err != nil {
+		receiver.Logger.Error("Error while uploading file to S3")
 		return "", c.SendString("Error while uploading file to S3"), true
 	}
+	receiver.Logger.Info("File uploaded to S3 " + key)
 	return key, nil, false
 }
 
@@ -116,5 +124,6 @@ func (receiver ReceiverController) saveToDataBase(key string, zapNumber string, 
 		UpdatedAt:      time.Now(),
 	}
 	id, error := receiver.ReceiverService.Save(fileToConvert)
+	receiver.Logger.Info("File inserted in database")
 	return fileToConvert, id, error
 }

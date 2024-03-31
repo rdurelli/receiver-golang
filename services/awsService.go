@@ -9,11 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
+	"golang.org/x/exp/slog"
 	"os"
 )
 
 type AwsService struct {
 	Session *session.Session
+	Logger  *slog.Logger
 }
 
 func NewAwsService() AwsService {
