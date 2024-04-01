@@ -48,10 +48,22 @@ services:
     image: prom/prometheus
     volumes:
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - "./rules.yml:/etc/prometheus/rules.yml"
     networks:
       - backend
     ports:
       - 9091:9090
+  alertmanager:
+    image: prom/alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - "./alertmanager:/config"
+      - alertmanager-data:/data
+    command: --config.file=/config/alertmanager.yml --log.level=debug
+    networks:
+      - backend
   grafana:
     depends_on:
       - prometheus
@@ -140,6 +152,7 @@ services:
       - backend
 volumes:
   db:
+  alertmanager-data:
 networks:
   backend:
   localstack:

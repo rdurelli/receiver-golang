@@ -124,6 +124,7 @@ func (receiver ReceiverController) saveToDataBase(key string, zapNumber string, 
 		UpdatedAt:      time.Now(),
 	}
 	id, error := receiver.ReceiverService.Save(fileToConvert)
+	services.PrometheusService{}.Increment()
 	receiver.Logger.Info("File inserted in database")
 	return fileToConvert, id, error
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/grafana/loki-client-go/loki"
 	slogloki "github.com/samber/slog-loki/v3"
@@ -59,6 +60,11 @@ func main() {
 	app := fiber.New(fiber.Config{
 		BodyLimit: 15 * 1024 * 1024, // this is the default limit of 15MB
 	})
+
+	prometheus := fiberprometheus.New("my-golang-receiver")
+	prometheus.RegisterAt(app, "/metrics")
+	app.Use(prometheus.Middleware)
+
 	routes.SetupRoutes(app, h, ctx, InitLoki())
 
 	serverPort := os.Getenv("SERVER_PORT")
